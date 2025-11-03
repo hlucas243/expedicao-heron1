@@ -19,12 +19,18 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y zip unzip
+          sudo apt install -y zip unzip openjdk-17-jdk
           pip install flask kivy buildozer cython
 
       - name: Unzip project
+        run: unzip expedicao_project_fixed.zip -d app
+
+      - name: Accept Android SDK licenses
         run: |
-          unzip expedicao_ready_for_github.zip -d app
+          mkdir -p ~/.android
+          touch ~/.android/repositories.cfg
+          yes | sdkmanager --licenses || true
+          yes | sdkmanager --update || true
 
       - name: Build APK with Buildozer
         run: |
@@ -36,4 +42,3 @@ jobs:
         with:
           name: app-expedicao
           path: app/bin/*.apk
-          
