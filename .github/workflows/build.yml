@@ -1,9 +1,6 @@
 name: Build APK
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
@@ -26,27 +23,27 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython
 
-      - name: Install Android SDK (correct path fixed)
+      - name: Install Android SDK (fixed folder structure)
         run: |
           export ANDROID_SDK_ROOT=$HOME/android-sdk
           mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
           cd $ANDROID_SDK_ROOT/cmdline-tools
           wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip
-          unzip -q tools.zip -d cmdline-tools
+          unzip -q tools.zip
           rm tools.zip
+          mv cmdline-tools latest
 
-          # Ajusta PATH para o local correto do sdkmanager
-          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools/bin:$PATH
+          # Corrige o PATH
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
 
-          # Testa se o sdkmanager foi encontrado
-          which sdkmanager || (echo "❌ sdkmanager não encontrado!" && ls -R $ANDROID_SDK_ROOT/cmdline-tools && exit 1)
-
+          # Aceita as licenças e instala os componentes
           yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
           yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platforms;android-35" "build-tools;36.1.0" "platform-tools"
 
       - name: Build APK with Buildozer
         run: |
-          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools/bin:$PATH
+          export ANDROID_SDK_ROOT=$HOME/android-sdk
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
           buildozer android debug
 
       - name: Upload APK artifact
