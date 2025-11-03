@@ -1,6 +1,9 @@
 name: Build APK
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -8,45 +11,46 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y zip unzip openjdk-17-jdk wget
+          sudo apt install -y zip unzip openjdk-17-jdk python3-pip
           pip install --upgrade pip
-          pip install buildozer cython kivy
+          pip install buildozer cython
 
-      - name: Install Android SDK (correct path)
+      - name: Install Android SDK (correct path fixed)
         run: |
           export ANDROID_SDK_ROOT=$HOME/android-sdk
           mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
           cd $ANDROID_SDK_ROOT/cmdline-tools
           wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip
-          unzip -q tools.zip -d latest
+          unzip -q tools.zip -d cmdline-tools
           rm tools.zip
-          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
+
+          # Ajusta PATH para o local correto do sdkmanager
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools/bin:$PATH
+
+          # Testa se o sdkmanager foi encontrado
+          which sdkmanager || (echo "❌ sdkmanager não encontrado!" && ls -R $ANDROID_SDK_ROOT/cmdline-tools && exit 1)
+
           yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
           yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platforms;android-35" "build-tools;36.1.0" "platform-tools"
 
-      - name: Unzip project
-        run: unzip expedicao-heron1-main.zip -d app
-
       - name: Build APK with Buildozer
         run: |
-          cd app
-          export ANDROIDSDK=$HOME/android-sdk
-          export PATH=$ANDROIDSDK/cmdline-tools/latest/bin:$PATH
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools/bin:$PATH
           buildozer android debug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-expedicao
-          path: app/bin/*.apk
+          name: app-release
+          path: bin/*.apk
