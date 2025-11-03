@@ -24,7 +24,7 @@ jobs:
 
       - name: Unzip project
         run: |
-          unzip expedicao-heron1-main.zip -d app
+          unzip expedicao_ready_for_github.zip -d app
 
       - name: Build APK with Buildozer
         run: |
